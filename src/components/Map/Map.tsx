@@ -12,6 +12,7 @@ type Props = {
   cityName?: string;
   containerClassName?: string;
   height?: number | string;
+  activeOfferId?: number | null;
 };
 
 const Map: React.FC<Props> = ({
@@ -19,10 +20,15 @@ const Map: React.FC<Props> = ({
   cityName = 'Amsterdam',
   containerClassName = 'cities__map map',
   height,
+  activeOfferId,
 }) => {
   const mapRef = useRef<HTMLDivElement | null>(null);
   const leafletMap = useRef<L.Map | null>(null);
   const offersLayerRef = useRef<L.LayerGroup | null>(null);
+  const markersMapRef = useRef<Record<number, L.Marker> | null>(null);
+  const activeMarkerRef = useRef<L.Marker | null>(null);
+  const defaultIconRef = useRef<L.Icon | null>(null);
+  const activeIconRef = useRef<L.Icon | null>(null);
 
   useEffect(() => {
     if (!mapRef.current) {
@@ -54,14 +60,34 @@ const Map: React.FC<Props> = ({
 
     const markers = L.layerGroup();
 
+    if (!defaultIconRef.current) {
+      defaultIconRef.current = L.icon({
+        iconUrl: '/img/pin.svg',
+        iconSize: [27, 39],
+        iconAnchor: [13, 39],
+      });
+    }
+    if (!activeIconRef.current) {
+      activeIconRef.current = L.icon({
+        iconUrl: '/img/pin-active.svg',
+        iconSize: [27, 39],
+        iconAnchor: [13, 39],
+      });
+    }
+
+    markersMapRef.current = {};
+
     places
       .filter((p) => p.city && p.city.name === cityName)
       .forEach((p) => {
         if (!p.city) {
           return;
         }
-        const marker = L.marker([p.city.location.lat, p.city.location.lng]);
+        const marker = L.marker([p.city.location.lat, p.city.location.lng], {
+          icon: defaultIconRef.current!,
+        });
         marker.addTo(markers);
+        markersMapRef.current![p.id] = marker;
       });
 
     markers.addTo(map);
@@ -81,6 +107,32 @@ const Map: React.FC<Props> = ({
 
     return () => {};
   }, [places, cityName]);
+
+  useEffect(() => {
+    if (!leafletMap.current) {
+      return;
+    }
+    const markersMap = markersMapRef.current;
+    if (!markersMap) {
+      return;
+    }
+
+    const defaultIcon = defaultIconRef.current!;
+    const activeIcon = activeIconRef.current!;
+
+    if (activeMarkerRef.current) {
+      activeMarkerRef.current.setIcon(defaultIcon);
+      activeMarkerRef.current = null;
+    }
+
+    if (activeOfferId != null) {
+      const m = markersMap[activeOfferId];
+      if (m) {
+        m.setIcon(activeIcon);
+        activeMarkerRef.current = m;
+      }
+    }
+  }, [activeOfferId]);
 
   const styleHeight =
     typeof height === 'number' ? `${height}px` : height ?? '100%';
