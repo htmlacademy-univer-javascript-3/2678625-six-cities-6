@@ -5,9 +5,9 @@ import { RootState } from '../../store';
 
 const Favorites: React.FC = () => {
   const offers = useSelector((s: RootState) => s.app.offers);
-  const places = offers.filter((p) => p.isBookmarked);
+  const places = offers.filter((p) => p.isFavorite);
 
-return (
+  return (
     <div className="page">
       <header className="header">
         <div className="container">

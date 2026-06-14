@@ -6,7 +6,7 @@ const CommentForm: React.FC = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('submit review', { rating, review });
+
     setReview('');
     setRating(null);
   };

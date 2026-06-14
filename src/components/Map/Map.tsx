@@ -3,8 +3,9 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
 type Place = {
-  id: number;
-  city?: { name: string; location: { lat: number; lng: number } };
+  id: string;
+  city?: { name: string; location: { latitude: number; longitude: number } };
+  location?: { latitude: number; longitude: number };
 };
 
 type Props = {
@@ -12,7 +13,7 @@ type Props = {
   cityName?: string;
   containerClassName?: string;
   height?: number | string;
-  activeOfferId?: number | null;
+  activeOfferId?: string | null;
 };
 
 const Map: React.FC<Props> = ({
@@ -25,7 +26,7 @@ const Map: React.FC<Props> = ({
   const mapRef = useRef<HTMLDivElement | null>(null);
   const leafletMap = useRef<L.Map | null>(null);
   const offersLayerRef = useRef<L.LayerGroup | null>(null);
-  const markersMapRef = useRef<Record<number, L.Marker> | null>(null);
+  const markersMapRef = useRef<Record<string, L.Marker> | null>(null);
   const activeMarkerRef = useRef<L.Marker | null>(null);
   const defaultIconRef = useRef<L.Icon | null>(null);
   const activeIconRef = useRef<L.Icon | null>(null);
@@ -80,10 +81,12 @@ const Map: React.FC<Props> = ({
     places
       .filter((p) => p.city && p.city.name === cityName)
       .forEach((p) => {
-        if (!p.city) {
+        const lat = p.location?.latitude ?? p.city?.location?.latitude;
+        const lng = p.location?.longitude ?? p.city?.location?.longitude;
+        if (typeof lat !== 'number' || typeof lng !== 'number') {
           return;
         }
-        const marker = L.marker([p.city.location.lat, p.city.location.lng], {
+        const marker = L.marker([lat, lng], {
           icon: defaultIconRef.current!,
         });
         marker.addTo(markers);
@@ -96,7 +99,11 @@ const Map: React.FC<Props> = ({
     const latlngs: [number, number][] = [];
     places.forEach((p) => {
       if (p.city && p.city.name === cityName) {
-        latlngs.push([p.city.location.lat, p.city.location.lng]);
+        const lat = p.location?.latitude ?? p.city.location?.latitude;
+        const lng = p.location?.longitude ?? p.city.location?.longitude;
+        if (typeof lat === 'number' && typeof lng === 'number') {
+          latlngs.push([lat, lng]);
+        }
       }
     });
 
@@ -125,7 +132,7 @@ const Map: React.FC<Props> = ({
       activeMarkerRef.current = null;
     }
 
-    if (activeOfferId != null) {
+    if (typeof activeOfferId === 'string' && activeOfferId !== '') {
       const m = markersMap[activeOfferId];
       if (m) {
         m.setIcon(activeIcon);
