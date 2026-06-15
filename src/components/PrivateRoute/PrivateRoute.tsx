@@ -8,6 +8,9 @@ type PrivateRouteProps = {
 
 const PrivateRoute = ({ children }: PrivateRouteProps) => {
   const status = useSelector((s: RootState) => s.app.authorizationStatus);
+  if (status === 'UNKNOWN') {
+    return null;
+  }
   const isAuth = status === 'AUTH';
   return isAuth ? children : <Navigate to="/login" />;
 };
